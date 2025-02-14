@@ -37,6 +37,7 @@ RUN set -eux; \
 		curl \
 		xz-utils \
 	; \
+        apt-mark unhold libc-bin
 	rm -rf /var/lib/apt/lists/*
 
 ENV PHP_INI_DIR /usr/local/etc/php

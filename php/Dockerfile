@@ -28,10 +28,17 @@ ENV PHPIZE_DEPS \
 		pkg-config \
 		re2c
 
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends libc-bin; \
+    echo "exit 0" > /var/lib/dpkg/info/libc-bin.postinst; \
+    dpkg --configure -a; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
+
 # persistent / runtime deps
 RUN set -eux; \
 	apt-get update; \
- 	apt-get install --reinstall libc-bin; \
 	apt-get install -y --no-install-recommends \
 		$PHPIZE_DEPS \
 		ca-certificates \

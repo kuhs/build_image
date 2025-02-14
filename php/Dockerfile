@@ -95,7 +95,7 @@ RUN set -eux; \
 	apt-mark manual $savedAptMark > /dev/null; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-COPY docker-php-source /usr/local/bin/
+COPY php/docker-php-source /usr/local/bin/
 
 RUN set -eux; \
 	\
@@ -121,6 +121,7 @@ RUN set -eux; \
 		PHP_BUILD_PROVIDER='https://github.com/docker-library/php' \
 		PHP_UNAME='Linux - Docker' \
 	; \
+        chmod a+x /usr/local/bin/docker-php-source; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \

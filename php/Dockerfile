@@ -36,7 +36,9 @@ RUN set -eux; \
 		ca-certificates \
 		curl \
 		xz-utils \
-	; \
+	|| true; \
+        dpkg --configure -a; \
+	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV PHP_INI_DIR /usr/local/etc/php

@@ -19,7 +19,7 @@ on:
       branch:
         description: 'Which branch to deploy'
         required: true
-        default: '7.4.25-fpm'
+        default: '8.2.25-fpm'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:

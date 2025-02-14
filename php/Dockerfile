@@ -30,7 +30,7 @@ ENV PHPIZE_DEPS \
 
 # persistent / runtime deps
 RUN set -eux; \
-	apt-get update; \
+	dpkg --configure -a; apt-get update; \
 	apt-get install -y --no-install-recommends \
 		$PHPIZE_DEPS \
 		ca-certificates \

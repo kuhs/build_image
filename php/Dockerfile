@@ -4,6 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
+#FROM debian:bullseye-slim
 FROM debian:bullseye-slim
 
 # prevent Debian's PHP packages from being installed
@@ -36,7 +37,7 @@ RUN set -eux; \
 		ca-certificates \
 		curl \
 		xz-utils \
-	|| true; \
+	; \
         dpkg --configure -a; \
 	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*

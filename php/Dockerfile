@@ -4,7 +4,6 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-#FROM debian:bullseye-slim
 FROM debian:bullseye-slim
 
 # prevent Debian's PHP packages from being installed
@@ -31,15 +30,13 @@ ENV PHPIZE_DEPS \
 
 # persistent / runtime deps
 RUN set -eux; \
-	dpkg --configure -a; apt-get update; \
+	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		$PHPIZE_DEPS \
 		ca-certificates \
 		curl \
 		xz-utils \
 	; \
-        dpkg --configure -a; \
-	apt-get clean; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV PHP_INI_DIR /usr/local/etc/php
@@ -61,11 +58,11 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS 42670A7FE4D0441C8E4632349E4FDC074A4EF02D 5A52880781F755608BF815FC910DEB46F53EA312
+ENV GPG_KEYS 39B641343D8C104B2B146DC3F9C39DC0B9698544 E60913E4DF209907D8E30D96659A97C9CF2A795A 1198C0117593497A5EC5C199286AF1F9897469DC
 
-ENV PHP_VERSION=7.4.25
-ENV PHP_URL="https://www.php.net/distributions/php-$PHP_VERSION.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-$PHP_VERSION.tar.xz.asc"
-ENV PHP_SHA256="12a758f1d7fee544387a28d3cf73226f47e3a52fb3049f07fcc37d156d393c0a"
+ENV PHP_VERSION 8.2.27
+ENV PHP_URL="https://www.php.net/distributions/php-8.2.27.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.2.27.tar.xz.asc"
+ENV PHP_SHA256="3eec91294d8c09b3df80b39ec36d574ed9b05de4c8afcb25fa215d48f9ecbc6b"
 
 RUN set -eux; \
 	\
@@ -98,7 +95,7 @@ RUN set -eux; \
 	apt-mark manual $savedAptMark > /dev/null; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
-COPY php/docker-php-source /usr/local/bin/
+COPY docker-php-source /usr/local/bin/
 
 RUN set -eux; \
 	\
@@ -114,11 +111,6 @@ RUN set -eux; \
 		libssl-dev \
 		libxml2-dev \
 		zlib1g-dev \
-		libkrb5-dev \
-		libsasl2-dev \
-		libc-client-dev \
-		libldap2-dev \
-		libzip-dev \
 	; \
 	\
 	export \
@@ -129,12 +121,10 @@ RUN set -eux; \
 		PHP_BUILD_PROVIDER='https://github.com/docker-library/php' \
 		PHP_UNAME='Linux - Docker' \
 	; \
-	chmod a+x /usr/local/bin/docker-php-source; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	debMultiarch="$(dpkg-architecture --query DEB_BUILD_MULTIARCH)"; \
-	ln -s /usr/lib/libc-client.a "/usr/lib/$debMultiarch/libc-client.a"; \
 # https://bugs.php.net/bug.php?id=74125
 	if [ ! -d /usr/include/curl ]; then \
 		ln -sT "/usr/include/$debMultiarch/curl" /usr/local/include/curl; \
@@ -149,16 +139,12 @@ RUN set -eux; \
 		\
 # https://github.com/docker-library/php/issues/439
 		--with-mhash \
-		--with-mysqli \
 		\
 # https://github.com/docker-library/php/issues/822
 		--with-pic \
 		\
-# --enable-ftp is included here for compatibility with existing versions. ftp_ssl_connect() needed ftp to be compiled statically before PHP 7.0 (see https://github.com/docker-library/php/issues/236).
-		--enable-ftp \
 # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
 		--enable-mbstring \
-		--enable-bcmath \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
 		--enable-mysqlnd \
 # https://wiki.php.net/rfc/argon2_password_hash
@@ -167,7 +153,6 @@ RUN set -eux; \
 		--with-sodium=shared \
 # always build against system sqlite3 (https://github.com/php/php-src/commit/6083a387a81dbbd66d6316a3a12a63f06d5f7109)
 		--with-pdo-sqlite=/usr \
-		--with-pdo-mysql=mysqlnd \
 		--with-sqlite3=/usr \
 		\
 		--with-curl \
@@ -191,18 +176,8 @@ RUN set -eux; \
 		--disable-cgi \
 		\
 		--enable-fpm \
-		--enable-intl \
-		--enable-soap \
 		--with-fpm-user=www-data \
 		--with-fpm-group=www-data \
-# enable imap and kerberos
-		--enable-exif \
-		--with-zip \
-		--with-ldap \
-		--with-kerberos \
-		--with-ldap-sasl \
-		--with-imap-ssl \
-		--with-imap \
 	; \
 	make -j "$(nproc)"; \
 	find -type f -name '*.a' -delete; \
@@ -219,9 +194,6 @@ RUN set -eux; \
 	\
 # https://github.com/docker-library/php/issues/692 (copy default example "php.ini" files somewhere easily discoverable)
 	cp -v php.ini-* "$PHP_INI_DIR/"; \
-	cp  php.ini-production "$PHP_INI_DIR/"php.ini; \
-	sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 4096M/g' "$PHP_INI_DIR/"php.ini; \
-	sed -i 's/post_max_size = 8M/post_max_size = 50M/g' "$PHP_INI_DIR/"php.ini; \
 	\
 	cd /; \
 	docker-php-source delete; \
@@ -247,10 +219,10 @@ RUN set -eux; \
 # smoke test
 	php --version
 
-COPY php/docker-php-ext-* php/docker-php-entrypoint /usr/local/bin/
+COPY docker-php-ext-* docker-php-entrypoint /usr/local/bin/
 
 # sodium was built as a shared module (so that it can be replaced later if so desired), so let's enable it too (https://github.com/docker-library/php/issues/598)
-RUN set -eux; chmod a+x /usr/local/bin/docker-php-ext-* /usr/local/bin/docker-php-entrypoint; docker-php-ext-enable sodium
+RUN docker-php-ext-enable sodium
 
 ENTRYPOINT ["docker-php-entrypoint"]
 WORKDIR /var/www/html

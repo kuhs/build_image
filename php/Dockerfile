@@ -31,13 +31,13 @@ ENV PHPIZE_DEPS \
 # persistent / runtime deps
 RUN set -eux; \
 	apt-get update; \
+ 	apt-get install --reinstall libc-bin; \
 	apt-get install -y --no-install-recommends \
 		$PHPIZE_DEPS \
 		ca-certificates \
 		curl \
 		xz-utils \
 	; \
-        apt-mark unhold libc-bin; \
 	rm -rf /var/lib/apt/lists/*
 
 ENV PHP_INI_DIR /usr/local/etc/php
